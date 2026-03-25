@@ -22,16 +22,25 @@ exports.createProduct = async (req, res) => {
 // 📥 GET ALL PRODUCTS (with optional subcategory filter)
 exports.getProducts = async (req, res) => {
   try {
-    const { subCategory } = req.query;
+    const { page = 1, limit = 6, subCategory, search } = req.query;
 
-    let query = {};
+    const query = {};
 
-    // ✅ filter by subcategory (for sidebar)
+    // 🔍 search by name
+    if (search) {
+      query.name = { $regex: search, $options: "i" }; // case-insensitive
+    }
+
+    // 📂 filter by subcategory
     if (subCategory) {
       query.subCategory = subCategory;
     }
 
-    const products = await Product.find(query).populate("subCategory");
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find(query)
+      .skip(skip)
+      .limit(parseInt(limit));
 
     res.json(products);
   } catch (err) {
